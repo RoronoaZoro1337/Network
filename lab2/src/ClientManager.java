@@ -22,7 +22,7 @@ public class ClientManager {
     }
 
     private void checkFile() throws ParserConfigurationException{
-        file = new File("/home/ilya/IdeaProjects/Seti/lab2/src/" + fileName);
+        file = new File("/home/ilya/IdeaProjects/Network/lab2/src/" + fileName);
         if(file.length() > MAX_FILE_SIZE){
             throw new ParserConfigurationException();
         }
