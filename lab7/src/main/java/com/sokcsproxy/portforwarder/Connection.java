@@ -52,6 +52,11 @@ class Connection {
             if (fcReadBytes < 0) {
                 return -1;
             }
+            try {
+                clientChannel.write(ByteBuffer.wrap(fcBuffer.array(), 0, fcReadBytes));
+            } catch (IOException ex) {
+                return -1;
+            }
             if (status == Status.NO_CONNECTION) {
                 status = Status.AUTHENTICATED;
                 cfReadBytes = 0;

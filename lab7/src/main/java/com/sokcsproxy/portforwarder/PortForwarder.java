@@ -3,6 +3,7 @@ package com.sokcsproxy.portforwarder;
 import org.xbill.DNS.ARecord;
 import org.xbill.DNS.Message;
 import org.xbill.DNS.Record;
+
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetAddress;
@@ -10,7 +11,9 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.*;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 
 public class PortForwarder {
 
@@ -23,21 +26,29 @@ public class PortForwarder {
         serverChannel.register(selector, SelectionKey.OP_ACCEPT);
         dnsSocketChannel = DatagramChannel.open();
         dnsSocketChannel.configureBlocking(false);
-        dnsSocketChannel.connect(new InetSocketAddress("8.8.8.8",53));
+        dnsSocketChannel.connect(new InetSocketAddress("8.8.8.8", 53));
         dnsSocketKey = dnsSocketChannel.register(selector, SelectionKey.OP_READ);
-
     }
 
     public void start() throws IOException {
+
         while (true) {
-            selector.select();
-            for (SelectionKey key : selector.selectedKeys()) {
+            try {
+                selector.select();
+                System.out.println("PortForwarder.start");
+            } catch (IOException e) {
+                return;
+            }
+            Set<SelectionKey> selectedKeys = selector.selectedKeys();
+            Iterator<SelectionKey> iter = selectedKeys.iterator();
+            while (iter.hasNext()) {
+                SelectionKey key = iter.next();
                 if (key.isValid()) {
-                    if(dnsSocketKey == key){
-                        if(key.isReadable()){
+                    if (dnsSocketKey == key) {
+                        if (key.isReadable()) {
                             setResolvedDns();
                         }
-                    } else if (key.isAcceptable()) {
+                    } else if (key.isAcceptable() && key.isValid()) {
                         accept();
                     } else if (key.isConnectable()) {
                         connect(key);
@@ -47,6 +58,7 @@ public class PortForwarder {
                         write(key);
                     }
                 }
+                iter.remove();
             }
         }
     }
@@ -59,7 +71,7 @@ public class PortForwarder {
         Record[] recs = msg.getSectionArray(1);
         for (Record rec : recs) {
             if (rec instanceof ARecord) {
-                ARecord arec = (ARecord)rec;
+                ARecord arec = (ARecord) rec;
                 int id = msg.getHeader().getID();
                 Connection mate = connectionDnsMap.get(id);
                 if (mate == null) continue;
@@ -70,8 +82,9 @@ public class PortForwarder {
     }
 
     private void accept() throws IOException {
+        System.out.println("PortForwarder.accept");
         SocketChannel clientChannel;
-        if((clientChannel = serverChannel.accept()) != null) {
+        if ((clientChannel = serverChannel.accept()) != null) {
             clientChannel.configureBlocking(false);
             SelectionKey key = clientChannel.register(selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE);
             connectionClientMap.put(key, new Connection(selector, clientChannel, connectionServerMap, l_port, dnsSocketChannel, connectionDnsMap));
@@ -80,8 +93,9 @@ public class PortForwarder {
 
     private void connect(SelectionKey key) throws IOException {
         try {
+            System.out.println("PortForwarder.connect");
             ((SocketChannel) key.channel()).finishConnect();
-        } catch (ConnectException ex){
+        } catch (ConnectException ex) {
             connectionServerMap.get(key).sendConnectionRefused();
             return;
         }
@@ -90,6 +104,7 @@ public class PortForwarder {
 
     private void read(SelectionKey key) throws IOException {
         int ret;
+        System.out.println("PortForwarder.read");
         if (connectionClientMap.containsKey(key)) {
             ret = connectionClientMap.get(key).readFromClient();
         } else if (connectionServerMap.containsKey(key)) {
@@ -105,6 +120,7 @@ public class PortForwarder {
 
     private void write(SelectionKey key) {
         int ret;
+        System.out.println("PortForwarder.write");
         if (connectionClientMap.containsKey(key)) {
             ret = connectionClientMap.get(key).writeToClient();
         } else if (connectionServerMap.containsKey(key)) {
