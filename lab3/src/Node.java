@@ -6,36 +6,35 @@ import java.util.Scanner;
 
 public class Node {
 
-    public Node(boolean isRoot, int lossPersentage, int port, InetAddress parentAddress, int parentPort) throws SocketException {
-
+    public Node(String name, boolean isRoot, int loss, int port, InetAddress parentAddress, int parentPort) throws SocketException {
         this.isRoot = isRoot;
-        this.lossPersentage = lossPersentage;
+        this.loss = loss;
         this.port = port;
-
-        if (!isRoot) {
+        this.name = name;
+        if (!isRoot){
             parent = new InetSocketAddress(parentAddress, parentPort);
             connectors.add(parent);
         }
-
         sender = new Sender(isRoot);
         sender.start();
     }
 
-    public void start() {
-
+    public void start(){
         Scanner scanner = new Scanner(System.in);
-
-        while(true) {
-            sender.addMessage(scanner.nextLine(), Message.USUAL);
+        while (true){
+            String data = scanner.nextLine();
+            if (data != null) {
+                sender.addMessage(data, Message.USUAL);
+            }
         }
     }
 
     static final Object o = new Object();
     static boolean isRoot;
-    static int lossPersentage;
+    static int loss;
     static int port;
+    static String name;
     static InetSocketAddress parent;
-    static ArrayList<InetSocketAddress> connectors;
+    static ArrayList<InetSocketAddress> connectors = new ArrayList<>();
     Sender sender;
 }
-

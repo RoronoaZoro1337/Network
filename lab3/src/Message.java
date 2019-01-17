@@ -3,11 +3,6 @@ import java.util.UUID;
 
 public class Message {
 
-    static final int USUAL = 170;
-    static final int ANSWER = 753;
-    static final int STOPSEND = 3;
-    static final int NEWCHILD = 12;
-
     public Message(String data, int code, int countOfSend, InetSocketAddress sender, UUID guid){
         this.data = data;
         this.code = code;
@@ -33,6 +28,10 @@ public class Message {
         this.sender = sender;
         this.receiver = receiver;
         this.guid = guid;
+    }
+
+    boolean timeToDelete() {
+        return System.currentTimeMillis() - startTime > 30000;
     }
 
     public String getData() {
@@ -70,4 +69,8 @@ public class Message {
     private InetSocketAddress sender;
     private InetSocketAddress receiver = null;
     private UUID guid;
+    static final int USUAL = 170;
+    static final int ANSWER = 753;
+    static final int STOPSEND = 3;
+    static final int NEWCHILD = 12;
 }
